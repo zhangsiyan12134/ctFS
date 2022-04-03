@@ -278,21 +278,25 @@ ssize_t  ctfs_pread(int fd, void *buf, size_t count, off_t offset){
 	else if(offset + count >= ct_rt.fd[fd].inode->i_size){
 		count = ct_rt.fd[fd].inode->i_size - offset;
 	}
-	
 	void* target = CT_REL2ABS(ct_rt.fd[fd].inode->i_block);
+	inode_rw_unlock(inode_n);
+
 #ifdef CTFS_DEBUG
 	timer_start();
 #endif
+	ct_fl_t *node1 = ctfs_lock_list_add_node(fd, target + offset, count, O_RDONLY);
+	while(node1->fl_block != NULL){} //wait for blocker finshed
 	if(count > PMD_SIZE){
 		big_memcpy(buf, target + offset, count);
 	}
 	else{
 		memcpy(buf, target + offset, count);
 	}
+	ctfs_lock_list_remove_node(fd, node1);
 #ifdef CTFS_DEBUG
 	ct_rt.fd[fd].cpy_time += timer_end();
 #endif
-	inode_rw_unlock(inode_n);
+	
 	dax_stop_access(ct_rt.mpk[DAX_MPK_DEFAULT]);
 	return count;
 }
@@ -329,6 +333,10 @@ static inline ssize_t  ctfs_pwrite_normal(int fd, const void *buf, size_t count,
 #endif
 	}
 	void * addr_base = CT_REL2ABS(ct_rt.fd[fd].inode->i_block);
+	inode_rw_unlock(inode_n);
+
+	ct_fl_t *node1 = ctfs_lock_list_add_node(fd, addr_base + offset, count, O_WRONLY);
+	while(node1->fl_block != NULL){} //wait for blocker finshed
 #ifdef CTFS_DEBUG
 	ino = *ct_rt.fd[fd].inode;
 #endif
@@ -339,7 +347,7 @@ static inline ssize_t  ctfs_pwrite_normal(int fd, const void *buf, size_t count,
 #ifdef CTFS_DEBUG
 	ct_rt.fd[fd].cpy_time += timer_end();
 #endif
-	inode_rw_unlock(inode_n);
+	ctfs_lock_list_remove_node(fd, node1);
 	dax_stop_access(ct_rt.mpk[DAX_MPK_DEFAULT]);
 	return count;
 }
