@@ -209,3 +209,13 @@ void ctfs_lock_list_init(){
     }
 }
 
+ct_fl_t*  __attribute__((optimize("O0"))) ctfs_rlock_lock(int fd, off_t offset, size_t count, int flag){
+    ct_fl_t *node = ctfs_lock_list_add_node(fd, offset, count, flag);
+	while(node->fl_block != NULL){} //wait for blocker finshed
+    return node;
+}
+
+void ctfs_rlock_unlock(int fd, ct_fl_t *node){
+    ctfs_lock_list_remove_node(fd, node);
+}
+

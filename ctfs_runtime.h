@@ -143,6 +143,8 @@ int check_access_conflict(ct_fl_t *node1, ct_fl_t *node2);
 ct_fl_t* ctfs_lock_list_add_node(int fd, off_t start, size_t n, int flag);
 void ctfs_lock_list_remove_node(int fd, ct_fl_t *node);
 void ctfs_lock_list_init();
+ct_fl_t*  ctfs_rlock_lock(int fd, off_t offset, size_t count, int flag);
+void ctfs_rlock_unlock(int fd, ct_fl_t *node);
 char* enum_to_string(int mode);		//for debugging only
 
 
