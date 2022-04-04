@@ -97,9 +97,9 @@ void ctfs_lock_remove_blocking(ct_fl_t *current){
         temp1 = temp->addr->fl_block;
         while(temp1 != NULL){   //go thorough the blocking list on other nodes to find itself
             //compare range and mode
-            if((temp1->addr->fl_start == current->fl_start) && (temp1->addr->fl_end == current->fl_end) && (temp1->addr->fl_type == current->fl_type)){
+            //if((temp1->addr->fl_start == current->fl_start) && (temp1->addr->fl_end == current->fl_end) && (temp1->addr->fl_type == current->fl_type)){
             //or simply compares the address
-            //if(temp1->addr == current){
+            if(temp1->addr == current){
                 prev = temp1->prev;
                 next = temp1->next;
                 if(prev != NULL)
@@ -113,7 +113,7 @@ void ctfs_lock_remove_blocking(ct_fl_t *current){
             }
             temp1 = temp1->next;
         }
-        printf("\tNode %p removed from Node %p blocking list\n", current, temp);
+        //printf("\tNode %p removed from Node %p blocking list\n", current, temp);
         if(temp->next == NULL){ //last member in waiting list
             free(temp);
             current->fl_wait = NULL;
@@ -158,9 +158,9 @@ ct_fl_t* ctfs_lock_list_add_node(int fd, off_t start, size_t n, int flag){
             //check if current list contains a lock that is not compatable
             if(check_overlap(tail, temp) && check_access_conflict(tail, temp)){
                 ctfs_lock_add_blocking(temp, tail); //add the conflicted lock into blocking list
-                printf("\tNode %p is blocking the Node %p\n", tail, temp);
+                //printf("\tNode %p is blocking the Node %p\n", tail, temp);
                 ctfs_lock_add_waiting(temp, tail); //add the new node to the waiting list of the conflicted node
-                printf("\tNode %p is waiting the Node %p\n", temp, tail);
+                //printf("\tNode %p is waiting the Node %p\n", temp, tail);
             }
             last = tail;
             tail = tail->fl_next;
@@ -170,7 +170,7 @@ ct_fl_t* ctfs_lock_list_add_node(int fd, off_t start, size_t n, int flag){
     } else {
         ct_rt.fl[fd] = temp;
     }
-    printf("Node %p added, Range: %u - %u, mode: %s\n", temp, temp->fl_start, temp->fl_end, enum_to_string(temp->fl_type));
+    //printf("Node %p added, Range: %u - %u, mode: %s\n", temp, temp->fl_start, temp->fl_end, enum_to_string(temp->fl_type));
     pthread_mutex_unlock(&ct_rt.fl_lock[fd]);
 
     return temp;
@@ -197,7 +197,7 @@ void ctfs_lock_list_remove_node(int fd, ct_fl_t *node){
             next->fl_prev = prev;
     }
     ctfs_lock_remove_blocking(node);
-    printf("Node %p removed, Range: %u - %u, mode: %s\n", node, node->fl_start, node->fl_end, enum_to_string(node->fl_type));
+    //printf("Node %p removed, Range: %u - %u, mode: %s\n", node, node->fl_start, node->fl_end, enum_to_string(node->fl_type));
     pthread_mutex_unlock(&ct_rt.fl_lock[fd]);
 
     free(node);
