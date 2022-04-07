@@ -167,11 +167,14 @@ ct_fl_t* ctfs_lock_list_add_node(int fd, off_t start, size_t n, int flag){
         tail = ct_rt.fl[fd];   //get the head of the lock list
         while(tail != NULL){
             //check if current list contains a lock that is not compatable
-            if(check_overlap(tail, temp) && check_access_conflict(tail, temp)){
-                ctfs_lock_add_blocking(temp, tail); //add the conflicted lock into blocking list
-                //printf("\tNode %p is blocking the Node %p\n", tail, temp);
-                ctfs_lock_add_waiting(temp, tail); //add the new node to the waiting list of the conflicted node
-                //printf("\tNode %p is waiting the Node %p\n", temp, tail);
+            if(check_access_conflict(tail, temp)){
+                if(check_overlap(tail, temp)){
+                    printf("Overlap is found.\n");
+                    ctfs_lock_add_blocking(temp, tail); //add the conflicted lock into blocking list
+                    //printf("\tNode %p is blocking the Node %p\n", tail, temp);
+                    ctfs_lock_add_waiting(temp, tail); //add the new node to the waiting list of the conflicted node
+                    //printf("\tNode %p is waiting the Node %p\n", temp, tail);
+                }
             }
             last = tail;
             tail = tail->fl_next;
