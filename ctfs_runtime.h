@@ -18,8 +18,6 @@ struct ct_fl_t {
 	struct ct_fl_seg *fl_block; 		/* locks that is blocking this lock */
 	struct ct_fl_seg *fl_wait; 		/* locks that is waiting for this lock*/
 
-	volatile int fl_lock;			/* lock itself*/
-
 	int fl_fd;    					/* Which fd has this lock */
 	unsigned char fl_type;			/* type of the current lock: O_RDONLY, O_WRONLY, or O_RDWR */
 	unsigned int fl_pid;
@@ -79,7 +77,8 @@ struct ct_runtime{
 	char 				open_lock_padding_[60];
 	//range lock
 	ct_fl_t*            fl[CT_MAX_FD];		//one list per opened file
-	pthread_mutex_t		fl_lock[CT_MAX_FD];	//one lock per list
+	//pthread_mutex_t	fl_lock[CT_MAX_FD];	//one lock per list
+	uint8_t				fl_lock[CT_MAX_FD];	//one lock per list
 	// ppg lock
 	uint64_t			pgg_lock;
 	char				pgg_lock_padding[56];
@@ -135,6 +134,9 @@ int inode_path2inode(ct_inode_frame_t * frame);
 int inode_resize(ct_inode_pt inode, size_t size);
 
 /*range lock related functions*/
+
+void rl_lock_acquire(uint8_t* addr);
+void rl_lock_release(uint8_t* addr);
 void ctfs_lock_add_blocking(ct_fl_t *current, ct_fl_t *node);
 void ctfs_lock_add_waiting(ct_fl_t *current, ct_fl_t *node);
 void ctfs_lock_remove_blocking(ct_fl_t *current);

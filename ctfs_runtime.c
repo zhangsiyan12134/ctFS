@@ -61,6 +61,16 @@ char* enum_to_string(int mode){
     }
 }
 
+/* per lock list lock acquire */
+void rl_lock_acquire(uint8_t* addr){
+    while(__sync_lock_test_and_set((char*) ((uint64_t)addr), (int)1));
+}
+
+/* per lock list lock release */
+void rl_lock_release(uint8_t* addr){
+    __sync_lock_release((char*) ((uint64_t)addr));
+}
+
 void ctfs_lock_add_blocking(ct_fl_t *current, ct_fl_t *node){
     /* add the conflicted node into the head of the blocking list of the current node*/
     ct_fl_seg *temp;
@@ -150,7 +160,8 @@ ct_fl_t* ctfs_lock_list_add_node(int fd, off_t start, size_t n, int flag){
     temp->fl_end = start + n - 1;
     temp->node_id = temp;
 
-    pthread_mutex_lock(&ct_rt.fl_lock[fd]);
+    //pthread_mutex_lock(&ct_rt.fl_lock[fd]);
+    rl_lock_acquire(&ct_rt.fl_lock[fd]);
 
     if(ct_rt.fl[fd] != NULL){
         tail = ct_rt.fl[fd];   //get the head of the lock list
@@ -171,7 +182,8 @@ ct_fl_t* ctfs_lock_list_add_node(int fd, off_t start, size_t n, int flag){
         ct_rt.fl[fd] = temp;
     }
     //printf("Node %p added, Range: %u - %u, mode: %s\n", temp, temp->fl_start, temp->fl_end, enum_to_string(temp->fl_type));
-    pthread_mutex_unlock(&ct_rt.fl_lock[fd]);
+    rl_lock_release(&ct_rt.fl_lock[fd]);
+    //pthread_mutex_unlock(&ct_rt.fl_lock[fd]);
 
     return temp;
 }
@@ -181,7 +193,8 @@ void ctfs_lock_list_remove_node(int fd, ct_fl_t *node){
     assert(node != NULL);
     ct_fl_t *prev, *next;
 
-    pthread_mutex_lock(&ct_rt.fl_lock[fd]);
+    //pthread_mutex_lock(&ct_rt.fl_lock[fd]);
+    rl_lock_acquire(&ct_rt.fl_lock[fd]);
     prev = node->fl_prev;
     next = node->fl_next;
     if (prev == NULL){
@@ -198,7 +211,8 @@ void ctfs_lock_list_remove_node(int fd, ct_fl_t *node){
     }
     ctfs_lock_remove_blocking(node);
     //printf("Node %p removed, Range: %u - %u, mode: %s\n", node, node->fl_start, node->fl_end, enum_to_string(node->fl_type));
-    pthread_mutex_unlock(&ct_rt.fl_lock[fd]);
+    rl_lock_release(&ct_rt.fl_lock[fd]);
+    //pthread_mutex_unlock(&ct_rt.fl_lock[fd]);
 
     free(node);
 }
