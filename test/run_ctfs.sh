@@ -1,1 +1,1 @@
-LD_PRELOAD=/home/robin/ctfs/bld/libctfs.so $@
+LD_PRELOAD=/home/robin/ECE1755/S/ctFS/bld/libctfs.so $@
